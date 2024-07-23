@@ -6,7 +6,7 @@ import { Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from
 @Entity({name: "users"})
 export class Users extends BaseEntity {
 
-    @Column()
+    @Column({unique: true})
     email: string
 
     @Column()
@@ -22,10 +22,10 @@ export class Users extends BaseEntity {
     isActivate: boolean
 
     @Column({name: "type_login"})
-    typeLogin: boolean
+    typeLogin: string
 
     @Column({name: "last_login"})
-    lastLogin: string
+    lastLogin: Date
 
 
     @OneToMany(() => UserHasRoles, userHasRole => userHasRole.user)

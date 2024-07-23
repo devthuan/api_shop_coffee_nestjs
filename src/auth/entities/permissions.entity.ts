@@ -15,6 +15,9 @@ export class Permissions extends BaseEntity {
     @Column({name: "guard_name"})
     guardName: string;
 
+    @Column({name: "is_activate", default: true})
+    isActivate: boolean;
+
     @OneToMany(() => UserHasPermissions, userHasPermission => userHasPermission.permission)
     userHasPermission: UserHasPermissions[];
 

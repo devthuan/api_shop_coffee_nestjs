@@ -14,7 +14,10 @@ export class Roles extends BaseEntity {
     @Column({name: "guard_name"})
     guardName: string;
 
-     @OneToMany(() => RoleHasPermissions, roleHasPermission => roleHasPermission.role)
+    @Column({name: "is_activate", default: true})
+    isActivate: boolean;
+
+    @OneToMany(() => RoleHasPermissions, roleHasPermission => roleHasPermission.role)
     roleHasPermission: RoleHasPermissions[];
 
     @OneToMany( () => UserHasRoles, userHasRoles => userHasRoles.role)

@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import { EmailModule } from './email/email.module';
 import * as redisStore from 'cache-manager-ioredis';
 
 
@@ -43,7 +44,8 @@ import * as redisStore from 'cache-manager-ioredis';
    
 
     UsersModule,
-    AuthModule
+    AuthModule,
+    EmailModule
   ],
   controllers: [AppController],
   providers: [AppService],
