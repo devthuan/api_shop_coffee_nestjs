@@ -14,6 +14,6 @@ import { EmailService } from 'src/email/email.service';
     TypeOrmModule.forFeature([Users, UserInformation, UserHasRoles, Roles])
   ],
   controllers: [UsersController],
-  providers: [UsersService, AuthService, EmailService],
+  providers: [UsersService],
 })
 export class UsersModule {}

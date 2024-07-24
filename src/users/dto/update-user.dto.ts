@@ -1,7 +1,7 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { CreateUserDto } from './create-user.dto';
 import { IsDate, IsDateString, IsIn, IsNumber, IsOptional, IsPhoneNumber, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
+import { CreateUserDto } from 'src/auth/dto/create-user.dto';
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
 

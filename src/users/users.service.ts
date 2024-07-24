@@ -1,14 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository,  } from '@nestjs/typeorm';
 import { Users } from './entities/users.entity';
 import { DataSource, Not, Repository } from 'typeorm';
 import { UserInformation } from './entities/user_infomation.entity';
-import { UserHasRoles } from 'src/auth/entities/user_has_roles.entity';
-import { Roles } from 'src/auth/entities/roles.entity';
-import { EmailService } from 'src/email/email.service';
-import { AuthService } from 'src/auth/auth.service';
+
 import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
 
 
@@ -26,99 +22,11 @@ export class UsersService {
     @InjectRepository(UserInformation)
     private readonly usersInformationRepository: Repository<UserInformation>,
     
-    @InjectRepository(UserHasRoles)
-    private readonly userHasRolesRepository: Repository<UserHasRoles>,
-    
-    @InjectRepository(Roles)
-    private readonly rolesRepository: Repository<Roles>,
-
-    private readonly emailService: EmailService,
-
-    private readonly authService: AuthService,
-
     private readonly dataSource: DataSource,
 
   ){}
 
-  async create(createUserDto: CreateUserDto) {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect()
-    await queryRunner.startTransaction();
-    try {
-
-      // init user
-      const newUser = this.usersRepository.create({
-        email: createUserDto.email,
-        password: await this.authService.hashingPassword(createUserDto.password),
-        ip: createUserDto.ip,
-        balance: 0,
-        typeLogin: "system",
-        isActivate: false,
-        lastLogin: new Date(),
-      })
-      await queryRunner.manager.save(newUser)
-
-      // init user information
-      const userInformation = this.usersInformationRepository.create({
-        user: newUser,
-      })
-      await queryRunner.manager.save(userInformation)
-
-      // init role 
-      const role = await this.rolesRepository.findOne({where: {name: "admin"}  })
-      if (!role) {
-        throw new Error("Role not found")
-      }
-      const userRole = this.userHasRolesRepository.create({
-        user: newUser,
-        role: role,
-        isActivate: true,
-      })
-      await queryRunner.manager.save(userRole)
-
-     
-
-      // generate otp
-      const otp   = this.authService.generateOTP();
-      const otpHash = await this.authService.hashingPassword(otp.toString())
-
-      // save otp to redis
-      await this.cacheManager.set(newUser.email, otpHash); 
-
-      // send email
-      await this.emailService.sendEmail(
-        newUser.email,
-        "Mã OTP",
-        otp.toString(),
-        otp.toString()
-      )
-
-
-      await queryRunner.commitTransaction();
-
-      return {
-        statusCode: 200,
-        status: 'success',
-        message: 'Create user success',
-      }
-
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      if (error.code === 'ER_DUP_ENTRY') {
-        return {
-          statusCode: 400,
-          status: 'error',
-          message: 'Email or number phone already exists',
-        }
-      }else {
-
-        throw error;
-      }
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
+ 
   async findAll(page: number, limit: number, sortBy: string, sortOrder: string) {
     
     const queryBuilder = this.usersRepository.createQueryBuilder('users')
@@ -187,6 +95,28 @@ export class UsersService {
      .leftJoinAndSelect('userHasRole.role', 'roles') 
      .leftJoinAndSelect('users.userHasPermission', 'userHasPermission')
      .where('users.id = :id', { id })
+     .andWhere('users.deletedAt IS NULL')
+     .getOne();
+    
+    if (!user) {
+      return {
+        statusCode: 404,
+        status: 'error',
+        message: 'User not found',
+      }
+    }
+    delete user.password
+    return user; 
+  }
+  async findOneByEmail(email: string): Promise<any> {
+
+    const user = await this.dataSource
+     .getRepository(Users)
+     .createQueryBuilder('users')
+     .leftJoinAndSelect('users.userHasRole', 'userHasRole')
+     .leftJoinAndSelect('userHasRole.role', 'roles') 
+     .leftJoinAndSelect('users.userHasPermission', 'userHasPermission')
+     .where('users.email = :email', { email })
      .andWhere('users.deletedAt IS NULL')
      .getOne();
     
@@ -334,9 +264,9 @@ export class UsersService {
 
 
 
-   private parseDate(dateString: string): Date {
-    const [day, month, year] = dateString.split('/' || '-' ).map(Number);
-    return new Date(year, month - 1, day); // JavaScript Date object sử dụng tháng 0-11
-  }
+  //  private parseDate(dateString: string): Date {
+  //   const [day, month, year] = dateString.split('/' || '-' ).map(Number);
+  //   return new Date(year, month - 1, day); // JavaScript Date object sử dụng tháng 0-11
+  // }
 
 }

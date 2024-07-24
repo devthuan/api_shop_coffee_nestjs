@@ -19,7 +19,7 @@ export class Users extends BaseEntity {
     balance: number
 
     @Column({name: "is_activate", default: false})
-    isActivate: boolean
+    isActive: boolean
 
     @Column({name: "type_login"})
     typeLogin: string
